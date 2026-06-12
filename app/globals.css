@@ -164,6 +164,21 @@ input, textarea { font: inherit; color: inherit; background: none; border: none;
   margin-bottom: 40px;
 }
 
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+.status .statusdot { width: 6px; height: 6px; border-radius: 50%; }
+.status.up { color: #4cc38a; }
+.status.up .statusdot { background: #4cc38a; box-shadow: 0 0 6px -1px #4cc38a; }
+.status.down { color: var(--red); }
+.status.down .statusdot { background: var(--red); box-shadow: 0 0 6px -1px var(--red); }
+
 /* ── capture bar ───────────────────────────────────────────── */
 
 .capture {

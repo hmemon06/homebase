@@ -4,6 +4,7 @@ import TaskItem, { type TaskWithProject } from "@/components/TaskItem";
 import AddTask from "@/components/AddTask";
 import { db, type Capture, type Project, type Standup } from "@/lib/db";
 import { headlineParts, todayStr, dayHeading } from "@/lib/dates";
+import { checkHealth } from "@/lib/health";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,7 @@ export default async function Today() {
   const today = todayStr();
   const weekOut = todayStr(7);
 
-  const [{ data: tasks }, { data: inbox }, { data: ships }, { data: projects }] =
+  const [{ data: tasks }, { data: inbox }, { data: ships }, { data: projects }, health] =
     await Promise.all([
       db
         .from("tasks")
@@ -28,6 +29,7 @@ export default async function Today() {
         .limit(12),
       db.from("standups").select("*").order("day", { ascending: false }).limit(40),
       db.from("projects").select("*").eq("archived", false).order("sort_order"),
+      checkHealth(),
     ]);
 
   const all = (tasks ?? []) as TaskWithProject[];
@@ -54,6 +56,12 @@ export default async function Today() {
           {dueNow.length === 0
             ? "Nothing due. Pick a front and push it forward."
             : `${dueNow.length} due now · ${thisWeek.length} this week`}
+          {health.map((h) => (
+            <span key={h.name} className={`status ${h.up ? "up" : "down"}`}>
+              <span className="statusdot" />
+              {h.name} {h.up ? `${h.ms}ms` : "down"}
+            </span>
+          ))}
         </p>
       </header>
 
