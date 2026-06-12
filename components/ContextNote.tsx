@@ -1,6 +1,23 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
+
+function Linkified({ text }: { text: string }) {
+  const parts = text.split(/(https?:\/\/[^\s]+)/g);
+  return (
+    <>
+      {parts.map((p, i) =>
+        /^https?:\/\//.test(p) ? (
+          <a key={i} href={p} target="_blank" rel="noreferrer" className="notelink">
+            {p.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}
+          </a>
+        ) : (
+          p
+        )
+      )}
+    </>
+  );
+}
 
 export default function ContextNote({
   projectId,
@@ -11,20 +28,18 @@ export default function ContextNote({
   initial: string;
   color: string;
 }) {
-  const [saved, setSaved] = useState(true);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState(initial);
 
-  function onChange(value: string) {
-    setSaved(false);
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(async () => {
-      await fetch(`/api/projects/${projectId}`, {
-        method: "PATCH",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ context_note: value }),
-      });
-      setSaved(true);
-    }, 700);
+  async function save(value: string) {
+    setEditing(false);
+    const trimmed = value.trimEnd();
+    setText(trimmed);
+    await fetch(`/api/projects/${projectId}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ context_note: trimmed }),
+    });
   }
 
   return (
@@ -32,13 +47,29 @@ export default function ContextNote({
       <div className="nowlabel" style={{ color }}>
         Now / Next
       </div>
-      <textarea
-        defaultValue={initial}
-        placeholder="where you left off, what's next…"
-        onChange={(e) => onChange(e.target.value)}
-        rows={2}
-      />
-      <div className="nowhint">{saved ? "saved" : "saving…"}</div>
+      {editing ? (
+        <textarea
+          autoFocus
+          defaultValue={text}
+          onBlur={(e) => save(e.target.value)}
+          rows={Math.max(2, text.split("\n").length)}
+          placeholder="where you left off, what's next…"
+        />
+      ) : (
+        <div
+          className="nownote"
+          onClick={(e) => {
+            if ((e.target as HTMLElement).tagName !== "A") setEditing(true);
+          }}
+        >
+          {text ? (
+            <Linkified text={text} />
+          ) : (
+            <span className="notehint">where you left off, what's next… (click to write)</span>
+          )}
+        </div>
+      )}
+      <div className="nowhint">{editing ? "click away to save" : "click to edit"}</div>
     </div>
   );
 }

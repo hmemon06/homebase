@@ -465,6 +465,20 @@ details.later[open] > summary::before { content: "− "; }
   line-height: 1.6;
   color: var(--ink);
 }
+.nownote {
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  cursor: text;
+  overflow-wrap: anywhere;
+}
+.notehint { color: var(--faint); font-style: italic; }
+.notelink {
+  color: var(--accent);
+  border-bottom: 1px solid rgba(232, 160, 76, 0.35);
+  transition: border-color 0.15s;
+}
+.notelink:hover { border-color: var(--accent); }
 .nowhint { font-family: var(--mono); font-size: 10px; color: var(--faint); margin-top: 6px; }
 
 /* ── empty states ──────────────────────────────────────────── */
