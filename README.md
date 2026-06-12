@@ -1,36 +1,39 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Homebase
 
-## Getting Started
+Personal mission control: every project, task, capture, and shipped commit in one place.
 
-First, run the development server:
+**Stack:** Next.js 16 · Supabase (free tier) · Render (free tier). No other services required.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Features
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Today** — what's due now, this week, plus your inbox and last night's ship report
+- **Capture** — type or talk (Web Speech API). With `ANTHROPIC_API_KEY` set, Claude files it into the right project and extracts tasks; without it, captures land in the inbox for one-tap filing
+- **Projects** — per-project task lists with a "Now / Next" context note so you can resume after weeks away
+- **Ship log** — nightly script scans every repo in `Desktop/code` and records what you actually committed
+- **Canvas** — upcoming assignments sync into School automatically (daily via Supabase pg_cron)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Setup
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. `npm install`
+2. Fill in `.env.local` (gitignored). Two values need manual steps:
+   - `SUPABASE_SERVICE_ROLE_KEY` — Supabase dashboard → Project Settings → API Keys → service_role (secret)
+   - `CANVAS_TOKEN` — Canvas → Account → Settings → "+ New Access Token"
+3. `npm run dev`
 
-## Learn More
+The same env vars (minus `APP_URL`) are set on the Render service for production.
 
-To learn more about Next.js, take a look at the following resources:
+## Auto-standup
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+`scripts/standup.mjs` runs nightly at 23:45 via Windows Task Scheduler (task name: `Homebase Standup`).
+It reads `APP_URL` + `SYNC_SECRET` from `.env.local` and posts today's commits per repo.
+Run it manually anytime: `node scripts/standup.mjs`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Canvas sync
 
-## Deploy on Vercel
+`GET /api/sync/canvas?key=<SYNC_SECRET>` upserts upcoming assignments (idempotent).
+Scheduled daily at 6:00 AM Central by Supabase pg_cron → pg_net hitting the Render URL.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Auth
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Single-user password gate (`APP_PASSWORD`) via `proxy.ts`; session is an httpOnly cookie.
+Machine endpoints (`/api/sync/*`, `/api/standup`) authenticate with `SYNC_SECRET` instead.
